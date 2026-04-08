@@ -9,4 +9,4 @@ COPY openenv.yaml /app/
 
 # Hugging Face Spaces expose port 7860 by default
 EXPOSE 7860
-CMD ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"]
