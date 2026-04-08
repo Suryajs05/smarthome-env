@@ -1,4 +1,4 @@
-# Smart Home Energy Optimizer (Meta AI Buildathon)
+# Smart Home Energy Optimizer (OpenEnv Hackathon)
 
 ## Environment Description
 A real-world simulation of an automated home energy management system. The agent must read the state of various appliances, understand peak hours, and issue commands to optimize energy usage while respecting comfort boundaries.
