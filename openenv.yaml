@@ -1,0 +1,10 @@
+name: smarthome_env
+version: 1.0.0
+description: A real-world Smart Home Energy Optimization environment.
+type: http
+http:
+  port: 7860
+  endpoints:
+    reset: /reset
+    step: /step
+    state: /state
