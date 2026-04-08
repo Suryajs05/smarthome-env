@@ -152,5 +152,10 @@ async def step_env(action: Action):
     obs = build_observation(session_state, feedback)
     return StepResult(observation=obs, reward=reward, done=done)
 
+def main():
+    """Entry point for the OpenEnv validator."""
+    uvicorn.run("server.app:app", host="0.0.0.0", port=7860, reload=False)
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+    main()
+
