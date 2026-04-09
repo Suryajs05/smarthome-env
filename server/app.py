@@ -126,30 +126,37 @@ async def step_env(action: Action):
 
     # Graders / Partial Reward Logic (Now strictly between 0.01 and 0.99)
     task = session_state["task"]
+    
+    # Helper to find a device by ID safely
+    def find_dev(dev_id):
+        return next((d for d in session_state["devices"] if d["id"] == dev_id), None)
+
     if task == "easy":
         lights_on = sum(1 for d in session_state["devices"] if d["type"] == "light" and d["status"] == "on")
-        reward = 0.99 - (lights_on * 0.40) # 0.99 if all off, 0.59 if one on, 0.19 if two on
+        reward = 0.99 - (lights_on * 0.40) 
         if lights_on == 0:
             done = True
             
     elif task == "medium":
-        hvac = session_state["devices"][0]
-        dist = abs(78.0 - hvac["temperature"])
-        reward = max(0.01, 0.99 - (dist * 0.10)) 
-        if hvac["temperature"] == 78.0:
-            done = True
+        hvac = find_dev("hvac_main")
+        if hvac:
+            dist = abs(78.0 - hvac.get("temperature", 70.0))
+            reward = max(0.01, 0.99 - (dist * 0.10)) 
+            if hvac.get("temperature") == 78.0:
+                done = True
             
     elif task == "hard":
-        pump = next(d for d in session_state["devices"] if d["id"] == "pool_pump")
-        hvac = next(d for d in session_state["devices"] if d["id"] == "hvac_main")
+        pump = find_dev("pool_pump")
+        hvac = find_dev("hvac_main")
         
-        r_pump = 0.49 if pump["status"] == "off" else 0.01
-        dist = abs(78.0 - hvac["temperature"])
-        r_hvac = max(0.01, 0.50 - (dist * 0.05))
-        
-        reward = r_pump + r_hvac
-        if pump["status"] == "off" and hvac["temperature"] == 78.0:
-            done = True
+        if pump and hvac:
+            r_pump = 0.49 if pump["status"] == "off" else 0.01
+            dist = abs(78.0 - hvac.get("temperature", 72.0))
+            r_hvac = max(0.01, 0.50 - (dist * 0.05))
+            
+            reward = r_pump + r_hvac
+            if pump["status"] == "off" and hvac.get("temperature") == 78.0:
+                done = True
 
     # Final Boundary Check to satisfy strictly (0, 1)
     reward = max(0.01, min(0.99, reward))
