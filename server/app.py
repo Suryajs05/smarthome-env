@@ -30,7 +30,7 @@ class StepResult(BaseModel):
     error: Optional[str] = None
 
 class ResetRequest(BaseModel):
-    task: str = "easy"
+    task_id: Optional[str] = "easy"
 
 # --- In-Memory State ---
 session_state = {}
@@ -73,22 +73,17 @@ def build_observation(state: Dict, feedback: str = "System ready.") -> Observati
 
 # --- Endpoints ---
 @app.post("/reset", response_model=StepResult)
-async def reset_env(req: Optional[ResetRequest] = None, task: Optional[str] = None):
-    # This checks BOTH the JSON body and the URL (?task=medium)
-    task_name = "easy"
-    if task:
-        task_name = task
-    elif req and req.task:
-        task_name = req.task
-
-    if task_name not in ["easy", "medium", "hard"]:
-        task_name = "easy"
-    
+async def reset_env(req: Optional[ResetRequest] = None, task_id: Optional[str] = None):
     global session_state
-    session_state = get_initial_state(task_name)
-    obs = build_observation(session_state)
     
-    # Returning a score strictly between 0 and 1
+    # Try to get task_id from query param first, then JSON body
+    t_id = task_id or (req.task_id if req else "easy")
+    
+    if t_id not in ["easy", "medium", "hard"]:
+        t_id = "easy"
+        
+    session_state = get_initial_state(t_id)
+    obs = build_observation(session_state)
     return StepResult(observation=obs, reward=0.01, done=False)
 
 @app.get("/state", response_model=Observation)
