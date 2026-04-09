@@ -73,15 +73,22 @@ def build_observation(state: Dict, feedback: str = "System ready.") -> Observati
 
 # --- Endpoints ---
 @app.post("/reset", response_model=StepResult)
-async def reset_env(req: ResetRequest = None):
-    task_name = req.task if req else "easy"
+async def reset_env(req: Optional[ResetRequest] = None, task: Optional[str] = None):
+    # This checks BOTH the JSON body and the URL (?task=medium)
+    task_name = "easy"
+    if task:
+        task_name = task
+    elif req and req.task:
+        task_name = req.task
+
     if task_name not in ["easy", "medium", "hard"]:
         task_name = "easy"
     
     global session_state
     session_state = get_initial_state(task_name)
     obs = build_observation(session_state)
-    # Changed reward to 0.01 to stay strictly > 0
+    
+    # Returning a score strictly between 0 and 1
     return StepResult(observation=obs, reward=0.01, done=False)
 
 @app.get("/state", response_model=Observation)
