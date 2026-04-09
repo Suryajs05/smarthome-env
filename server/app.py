@@ -20,7 +20,7 @@ class Observation(BaseModel):
 
 class Action(BaseModel):
     device_id: str
-    command: str # "turn_on", "turn_off", "set_temp"
+    command: str 
     value: Optional[float] = None
 
 class StepResult(BaseModel):
@@ -37,7 +37,6 @@ session_state = {}
 
 def get_initial_state(task: str) -> Dict:
     if task == "easy":
-        # Task 1: Turn off lights during the day
         return {
             "task": "easy",
             "step": 0,
@@ -48,7 +47,6 @@ def get_initial_state(task: str) -> Dict:
             ]
         }
     elif task == "medium":
-        # Task 2: Set HVAC to Eco Mode (78F)
         return {
             "task": "medium",
             "step": 0,
@@ -58,7 +56,6 @@ def get_initial_state(task: str) -> Dict:
             ]
         }
     else:
-        # Task 3 (Hard): Peak shaving. Turn off pool pump, set HVAC to 78.
         return {
             "task": "hard",
             "step": 0,
@@ -84,7 +81,8 @@ async def reset_env(req: ResetRequest = None):
     global session_state
     session_state = get_initial_state(task_name)
     obs = build_observation(session_state)
-    return StepResult(observation=obs, reward=0.0, done=False)
+    # Changed reward to 0.01 to stay strictly > 0
+    return StepResult(observation=obs, reward=0.01, done=False)
 
 @app.get("/state", response_model=Observation)
 async def get_state():
@@ -100,13 +98,12 @@ async def step_env(action: Action):
     
     session_state["step"] += 1
     feedback = f"Action '{action.command}' applied to '{action.device_id}'."
-    reward = 0.0
+    reward = 0.01
     done = False
     
-    # Apply action
     device = next((d for d in session_state["devices"] if d["id"] == action.device_id), None)
     if not device:
-        return StepResult(observation=build_observation(session_state, "Error: Device not found"), reward=0.0, done=False, error="Device not found")
+        return StepResult(observation=build_observation(session_state, "Error: Device not found"), reward=0.01, done=False, error="Device not found")
 
     if action.command in ["turn_on", "turn_off"]:
         device["status"] = action.command.split("_")[1]
@@ -115,37 +112,36 @@ async def step_env(action: Action):
     else:
         feedback = "Invalid command for device type."
 
-    # Graders / Partial Reward Logic
+    # Graders / Partial Reward Logic (Now strictly between 0.01 and 0.99)
     task = session_state["task"]
     if task == "easy":
-        # Reward for turning off lights
         lights_on = sum(1 for d in session_state["devices"] if d["type"] == "light" and d["status"] == "on")
-        reward = 1.0 - (lights_on / 2.0)
+        reward = 0.99 - (lights_on * 0.40) # 0.99 if all off, 0.59 if one on, 0.19 if two on
         if lights_on == 0:
             done = True
             
     elif task == "medium":
-        # Reward based on proximity to 78F target
         hvac = session_state["devices"][0]
         dist = abs(78.0 - hvac["temperature"])
-        reward = max(0.0, 1.0 - (dist / 8.0)) # 0.0 at 70F, 1.0 at 78F
+        reward = max(0.01, 0.99 - (dist * 0.10)) 
         if hvac["temperature"] == 78.0:
             done = True
             
     elif task == "hard":
-        # Reward = 0.5 for pump off, 0.5 for HVAC at 78F
         pump = next(d for d in session_state["devices"] if d["id"] == "pool_pump")
         hvac = next(d for d in session_state["devices"] if d["id"] == "hvac_main")
         
-        r_pump = 0.5 if pump["status"] == "off" else 0.0
+        r_pump = 0.49 if pump["status"] == "off" else 0.01
         dist = abs(78.0 - hvac["temperature"])
-        r_hvac = max(0.0, 0.5 - (dist / 12.0))
+        r_hvac = max(0.01, 0.50 - (dist * 0.05))
         
         reward = r_pump + r_hvac
         if pump["status"] == "off" and hvac["temperature"] == 78.0:
             done = True
 
-    # Timeout
+    # Final Boundary Check to satisfy strictly (0, 1)
+    reward = max(0.01, min(0.99, reward))
+
     if session_state["step"] >= 8:
         done = True
 
@@ -153,9 +149,7 @@ async def step_env(action: Action):
     return StepResult(observation=obs, reward=reward, done=done)
 
 def main():
-    """Entry point for the OpenEnv validator."""
     uvicorn.run("server.app:app", host="0.0.0.0", port=7860, reload=False)
 
 if __name__ == "__main__":
     main()
-
