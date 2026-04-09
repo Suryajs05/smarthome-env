@@ -1,6 +1,6 @@
 name: smarthome_env
 version: 1.0.0
-description: A real-world Smart Home Energy Optimization environment.
+description: Smart Home Energy Optimizer
 type: http
 http:
   port: 7860
@@ -8,3 +8,10 @@ http:
     reset: /reset
     step: /step
     state: /state
+tasks:
+  - id: easy
+    description: "Turn off lights during the day."
+  - id: medium
+    description: "Set HVAC to Eco Mode (78F)."
+  - id: hard
+    description: "Peak shaving: HVAC to 78F and Pool Pump off."
