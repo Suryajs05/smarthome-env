@@ -15,13 +15,16 @@ tasks:
     description: "Turn off lights during the day."
     difficulty: "easy"
     max_steps: 8
+    score_range: [0.0, 1.0]
   - id: "medium"
     name: "HVAC Eco Mode"
     description: "Set HVAC to Eco Mode (78F)."
     difficulty: "medium"
     max_steps: 8
+    score_range: [0.0, 1.0]
   - id: "hard"
     name: "Peak Shaving"
     description: "Peak shaving: HVAC to 78F and Pool Pump off."
     difficulty: "hard"
     max_steps: 8
+    score_range: [0.0, 1.0]
