@@ -102,6 +102,23 @@ async def get_state():
         session_state = get_initial_state("easy")
     return build_observation(session_state)
 
+@app.get("/tasks")
+async def list_tasks():
+    """The secret endpoint the Phase 2 bot is looking for!"""
+    return [
+        {"id": "easy", "description": "Turn off lights during the day."},
+        {"id": "medium", "description": "Set HVAC to Eco Mode (78F)."},
+        {"id": "hard", "description": "Peak shaving: HVAC to 78F and Pool Pump off."}
+    ]
+
+@app.get("/")
+async def root_check():
+    return {"status": "OpenEnv Server Running"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
 @app.post("/step", response_model=StepResult)
 async def step_env(action: Action):
     global session_state
