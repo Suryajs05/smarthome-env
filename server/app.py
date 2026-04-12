@@ -94,7 +94,7 @@ async def reset_env(request: Request):
     global session_state
     session_state = get_initial_state(task_name)
     obs = build_observation(session_state)
-    return StepResult(observation=obs, reward=0.01, done=False)
+    return StepResult(observation=obs, reward=0.1, done=False)
 
 @app.get("/state", response_model=Observation)
 async def get_state():
@@ -145,7 +145,7 @@ async def step_env(action: Action):
 
     # Graders
     task = session_state["task"]
-    base_reward = 0.01
+    base_reward = 0.1
     
     if task == "easy":
         lights_on = sum(1 for d in session_state["devices"] if d["type"] == "light" and d["status"] == "on")
@@ -156,24 +156,24 @@ async def step_env(action: Action):
         hvac = find_dev("hvac_main")
         if hvac:
             dist = abs(78.0 - hvac.get("temperature", 70.0))
-            base_reward = max(0.01, 0.99 - (dist * 0.10))
+            base_reward = max(0.1, 0.99 - (dist * 0.10))
             if hvac.get("temperature") == 78.0: done = True
             
     elif task == "hard":
         pump = find_dev("pool_pump")
         hvac = find_dev("hvac_main")
         if pump and hvac:
-            r_pump = 0.49 if pump["status"] == "off" else 0.01
+            r_pump = 0.49 if pump["status"] == "off" else 0.1
             dist = abs(78.0 - hvac.get("temperature", 72.0))
-            r_hvac = max(0.01, 0.50 - (dist * 0.05))
+            r_hvac = max(0.1, 0.50 - (dist * 0.05))
             base_reward = r_pump + r_hvac
             if pump["status"] == "off" and hvac.get("temperature") == 78.0: done = True
 
     # MATHEMATICAL PROOF OF GRADER: Deduct a tiny fraction per step so the score always moves
     dynamic_reward = base_reward - (session_state["step"] * 0.001)
 
-    # Strictly lock it between 0.01 and 0.99
-    reward = max(0.01, min(0.99, dynamic_reward))
+    # Strictly lock it between 0.1 and 0.99
+    reward = max(0.1, min(0.99, dynamic_reward))
 
     if session_state["step"] >= 8:
         done = True
