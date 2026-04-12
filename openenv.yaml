@@ -8,6 +8,7 @@ http:
     reset: /reset
     step: /step
     state: /state
+    tasks: /tasks
 tasks:
   - id: easy
     description: "Turn off lights during the day."
